@@ -1372,9 +1372,11 @@ def creditNote(request):
         cmp = request.user.employee.company
   creditnotes=CreditNote.objects.filter(company=cmp)
   if not creditnotes:
-    return render(request,'CreditNote.html',{'usr':request.user})
-  else:
-    return redirect('SalesReturn') 
+    if CreditNoteReference.objects.filter(company=cmp).exists():
+      return redirect('SalesReturn') 
+    else:
+      return render(request,'CreditNote.html',{'usr':request.user})
+  return redirect('SalesReturn') 
 
 def SalesReturn(request):
     if request.user.is_company:
@@ -1386,13 +1388,18 @@ def SalesReturn(request):
     unit = Unit.objects.filter(company=cmp)
     
     max_reference_no = CreditNote.objects.filter(company=cmp).aggregate(Max('reference_no'))['reference_no__max']
+    print("max_reference_no",max_reference_no)
     reference_no = max_reference_no + 1 if max_reference_no is not None else 1
-    
+    print("reference_no",reference_no)
+    if max_reference_no is None:
+       max_reference_no=0
+    print("now max",max_reference_no)
 # Check if there are deleted credit notes in CreditNoteReference
     if CreditNoteReference.objects.filter(company=cmp).exists():
       last_reference_no = CreditNoteReference.objects.filter(company=cmp).order_by('-id').first().reference_no
-      if last_reference_no > max_reference_no:
-        reference_no = last_reference_no + 1
+      print("last_reference_no", last_reference_no)
+      if int(last_reference_no) > max_reference_no:
+        reference_no = int(last_reference_no) + 1
     context = {'usr':request.user, 'parties':parties, 'items':items,'unit':unit,'cmp':cmp,'reference_number': reference_no}
     
     return render(request, 'SalesReturn.html', context)
@@ -1699,7 +1706,7 @@ def edit_creditnote(request,pk):
   items = Item.objects.filter(company=cmp)
   unit = Unit.objects.filter(company=cmp)
   creditnote_curr=CreditNote.objects.get(id=pk)
-  reference=CreditNoteReference.objects.get(credit_note=creditnote_curr)
+  reference=creditnote_curr.reference_no
   creditnote_items=CreditNoteItem.objects.filter(credit_note=creditnote_curr)
   for item in creditnote_items:
     print(f"Item ID: {item.id}")
@@ -1720,7 +1727,8 @@ def delete_creditnote(request,pk):
     cmp = request.user.employee.company
   creditnote=CreditNote.objects.get(id=pk)
   reference_no=creditnote.reference_no
-  CreditNoteReference.objects.create(user=request.user,company=cmp,credit_note=creditnote,reference_no=reference_no)
+  cr=CreditNoteReference.objects.create(user=request.user,company=cmp,reference_no=reference_no)
+  cr.save()
   creditnote.delete()
   return redirect('listout_page')
 

@@ -91,6 +91,7 @@
 
     .myDropDown{
         flex: 1;
+      
     }
     .select2-container--default .select2-selection--single {
 
@@ -180,7 +181,7 @@
                     <div class="row mt-4">
                         <div class="col-md-4">
                             <label for="validationDefaultUsername" class="form-label">Reference:</label>
-                            <input type="text" class="form-control" id="refnum" name="refnum" value="{{reference_number}}">
+                            <input type="text" class="form-control" id="refnum" name="refnum" value="{{reference_number}}" readonly>
                         </div>
                     </div>
                     <div class="row mt-3">
@@ -263,7 +264,7 @@
                                     <td class="p-3">1</td>
                                     <td class="p-3">
                                         <div style="display: flex;">
-                                            <div class="myDropDown">
+                                            <div class="myDropDown" style="width: max-content;">
                                                 <select id="item_name" class="form-control item-name" name="item_name" required>      
                                                     <option selected disabled>Select Item</option>
                                                     {% for item in items %}
@@ -739,6 +740,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/js/select2.min.js"></script>
 
 <script>
+   
     function validatecreditnote() {
         var partystatus = document.querySelector('input[name="partyStatusGroup"]:checked');
         console.log("partystatus:", partystatus);
@@ -1045,14 +1047,28 @@
             `;
 
             $('.table tbody').append(newRow);
-            
-            var newItemDropdown = $('#item_name_' + serialNumber);
-    newItemDropdown.append(defaultItemOptions.clone());
-                reloadItem();
-    // Initialize Select2 for the item dropdown in the new row
-    newItemDropdown.select2();
+            $.ajax({
+                url: "{% url 'item_dropdown' %}", // Replace this with the actual URL to fetch items
+                type: "GET",
+                success: function (data) {
+                    var dropdown = $('#item_name_' + serialNumber);
+                dropdown.empty();
+                dropdown.append(`<option disabled selected>Select Item</option>`);
+                $.each(data, function(key, value) {
+                    dropdown.append($('<option></option>').attr('value', key).text(value[1]).val(value[0] + " " + value[2] + " " + value[3] + " " + value[4]));
+                });
+                },
+                error: function (xhr, status, error) {
+                    console.error(xhr.responseText);
+                    // Handle error
+                }
+            });
 
-    updateTotalItems();
+            console.log(defaultItemOptions);
+            
+            $('#item_name_' + serialNumber).select2();
+
+            updateTotalItems();
         }
 
         function updateTotalItems() {
@@ -1061,7 +1077,9 @@
         }
 
         function initializeSelect2ForItemName(id) {
+           
             $('#item_name_' + id).select2();
+            reloadItem();
         }
 
         $('#unitmodalBtn').on('click', function (event) {

@@ -217,7 +217,7 @@ class CreditNote(models.Model):
 class CreditNoteReference(models.Model):
     user = models.ForeignKey(CustomUser,on_delete=models.CASCADE,null=True,blank=True)
     company = models.ForeignKey(Company,on_delete= models.CASCADE,null=True,blank=True)
-    credit_note = models.ForeignKey(CreditNote, related_name='references', on_delete=models.CASCADE)
+    # credit_note = models.ForeignKey(CreditNote, related_name='references', on_delete=models.CASCADE)
     reference_no = models.CharField(max_length=100, blank=True,null=True)
 
 class CreditNoteItem(models.Model):
